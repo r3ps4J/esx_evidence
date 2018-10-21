@@ -15,12 +15,19 @@ local HasAlreadyEnteredMarker = false
 local LastStation             = nil
 local LastPart                = nil
 local LastPartNum             = nil
+local LastEntity              = nil
 local CurrentAction           = nil
 local CurrentActionMsg        = ''
 local CurrentActionData       = {}
-
+local IsHandcuffed            = false
+local HandcuffTimer           = {}
+local DragStatus              = {}
+DragStatus.IsDragged          = false
 local hasAlreadyJoined        = false
-
+local blipsCops               = {}
+local isDead                  = false
+local CurrentTask             = {}
+local playerInService         = false
 
 ESX                           = nil
 
@@ -67,10 +74,6 @@ function OpenArmoryMenu(station)
           OpenPutWeaponMenu()
         end
 
-        if data.current.value == 'buy_weapons' then
-          OpenBuyWeaponsMenu(station)
-        end
-
         if data.current.value == 'put_stock' then
           OpenPutStocksMenu()
         end
@@ -89,7 +92,6 @@ function OpenArmoryMenu(station)
         CurrentActionData = {station = station}
       end
     )
-
 end
 
 
@@ -235,29 +237,29 @@ function OpenPutStocksMenu()
 
     for i=1, #inventory.items, 1 do
 
-      local item = inventory.items[i]
-
-      if item.count > 0 then
-        table.insert(elements, {label = item.label .. ' x' .. item.count, type = 'item_standard', value = item.name})
-      end
---
+		local item = inventory.items[i]
+	
+		if item.count > 0 then
+		table.insert(elements, {label = item.label .. ' x' .. item.count, type = 'item_standard', value = item.name})
+		end
 
     end
 	
-		  		PlayerData = ESX.GetPlayerData()
-			for i=1, #PlayerData.accounts, 1 do
-				if PlayerData.accounts[i].name == 'black_money' then
-				  local itemBlack = 1
-				    table.insert(elements, {
-				      label     = PlayerData.accounts[i].label .. ' [ $'.. math.floor(PlayerData.accounts[i].money+0.5) ..' ]',
-				      count     = PlayerData.accounts[i].money,
-				      value     = PlayerData.accounts[i].name,
-				      name      = PlayerData.accounts[i].label,
-					  limit     = PlayerData.accounts[i].limit,
-					  type		= 'item_account',
-				    })
-				end
-			end
+	PlayerData = ESX.GetPlayerData()
+	for i=1, #PlayerData.accounts, 1 do
+		if PlayerData.accounts[i].name == 'black_money' then
+		-- if PlayerData.accounts[i].money > 0 then
+		local itemBlack = 1
+			table.insert(elements, {
+			label     = PlayerData.accounts[i].label .. ' [ $'.. math.floor(PlayerData.accounts[i].money+0.5) ..' ]',
+			count     = PlayerData.accounts[i].money,
+			value     = PlayerData.accounts[i].name,
+			name      = PlayerData.accounts[i].label,
+			limit     = PlayerData.accounts[i].limit,
+			type		= 'item_account',
+			})
+		end
+	end
 
     ESX.UI.Menu.Open(
       'default', GetCurrentResourceName(), 'stocks_menu',
@@ -282,7 +284,6 @@ function OpenPutStocksMenu()
 
 			if itemName == "black_money" then
 				TriggerServerEvent('esx_evidence:removeBlack', itemName, count)
-				TriggerServerEvent('esx_evidence:putStockItems', itemName, count)
 			end
 			
             if count == nil then
@@ -319,9 +320,6 @@ AddEventHandler('esx:setJob', function(job)
 	Citizen.Wait(5000)
 end)
 
-
-
-
 AddEventHandler('esx_evidence:hasEnteredMarker', function(station, part, partNum)
 
   if part == 'Cloakroom' then
@@ -342,40 +340,6 @@ AddEventHandler('esx_evidence:hasEnteredMarker', function(station, part, partNum
     CurrentActionData = {station = station, partNum = partNum}
   end
 
-  if part == 'HelicopterSpawner' then
-
-    local helicopters = Config.EvidenceLockers[station].Helicopters
-
-    if not IsAnyVehicleNearPoint(helicopters[partNum].SpawnPoint.x, helicopters[partNum].SpawnPoint.y, helicopters[partNum].SpawnPoint.z,  3.0) then
-
-      ESX.Game.SpawnVehicle('polmav', helicopters[partNum].SpawnPoint, helicopters[partNum].Heading, function(vehicle)
-        SetVehicleModKit(vehicle, 0)
-        SetVehicleLivery(vehicle, 0)
-      end)
-
-    end
-
-  end
-
-  if part == 'VehicleDeleter' then
-
-    local playerPed = PlayerPedId()
-    local coords    = GetEntityCoords(playerPed)
-
-    if IsPedInAnyVehicle(playerPed,  false) then
-
-      local vehicle = GetVehiclePedIsIn(playerPed, false)
-
-      if DoesEntityExist(vehicle) then
-        CurrentAction     = 'delete_vehicle'
-        CurrentActionMsg  = _U('store_vehicle')
-        CurrentActionData = {vehicle = vehicle}
-      end
-
-    end
-
-  end
-
   if part == 'BossActions' then
     CurrentAction     = 'menu_boss_actions'
     CurrentActionMsg  = _U('open_bossmenu')
@@ -389,35 +353,13 @@ AddEventHandler('esx_evidence:hasExitedMarker', function(station, part, partNum)
   CurrentAction = nil
 end)
 
-
--- Create blips
--- Citizen.CreateThread(function()
-
-  -- for k,v in pairs(Config.EvidenceLockers) do
-
-    -- local blip = AddBlipForCoord(v.Blip.Pos.x, v.Blip.Pos.y, v.Blip.Pos.z)
-
-    -- SetBlipSprite (blip, v.Blip.Sprite)
-    -- SetBlipDisplay(blip, v.Blip.Display)
-    -- SetBlipScale  (blip, v.Blip.Scale)
-    -- SetBlipColour (blip, v.Blip.Colour)
-    -- SetBlipAsShortRange(blip, true)
-
-    -- BeginTextCommandSetBlipName("STRING")
-    -- AddTextComponentString(_U('map_blip'))
-    -- EndTextCommandSetBlipName(blip)
-
-  -- end
-
--- end)
-
 -- Display markers
 Citizen.CreateThread(function()
   while true do
 
     Wait(0)
 
-    if PlayerData.job ~= nil and PlayerData.job.name == 'police' then
+    if PlayerData.job ~= nil and (PlayerData.job.name == 'police' or PlayerData.job.name == 'sheriff') then
 
       local playerPed = PlayerPedId()
       local coords    = GetEntityCoords(playerPed)
@@ -430,7 +372,7 @@ Citizen.CreateThread(function()
           end
         end
 
-        if PlayerData.job ~= nil and PlayerData.job.name == 'police' and PlayerData.job.grade_name == 'boss' or PlayerData.job.grade_name == 'chief' then
+        if PlayerData.job ~= nil and (PlayerData.job.name == 'police' or PlayerData.job.name == 'sheriff') and PlayerData.job.grade_name == 'boss' or PlayerData.job.grade_name == 'chief' then
 
           for i=1, #v.BossActions, 1 do
             if not v.BossActions[i].disabled and GetDistanceBetweenCoords(coords,  v.BossActions[i].x,  v.BossActions[i].y,  v.BossActions[i].z,  true) < Config.DrawDistance then
@@ -454,7 +396,7 @@ Citizen.CreateThread(function()
 
     Wait(0)
 
-    if PlayerData.job ~= nil and PlayerData.job.name == 'police' then
+    if PlayerData.job ~= nil and (PlayerData.job.name == 'police' or PlayerData.job.name == 'sheriff') then
 
       local playerPed      = PlayerPedId()
       local coords         = GetEntityCoords(playerPed)
@@ -475,7 +417,7 @@ Citizen.CreateThread(function()
         end
 
 
-        if PlayerData.job ~= nil and PlayerData.job.name == 'police' and PlayerData.job.grade_name == 'boss' or PlayerData.job.grade_name == 'chief' then
+        if PlayerData.job ~= nil and (PlayerData.job.name == 'police' or PlayerData.job.name == 'sheriff') and PlayerData.job.grade_name == 'boss' or PlayerData.job.grade_name == 'chief' then
 
           for i=1, #v.BossActions, 1 do
             if GetDistanceBetweenCoords(coords,  v.BossActions[i].x,  v.BossActions[i].y,  v.BossActions[i].z,  true) < Config.MarkerSize.x then
@@ -534,13 +476,12 @@ Citizen.CreateThread(function()
 			AddTextComponentString(CurrentActionMsg)
 			DisplayHelpTextFromStringLabel(0, 0, 1, -1)
 
-			if IsControlJustReleased(0, Keys['E']) and PlayerData.job ~= nil and PlayerData.job.name == 'police' then
+			if IsControlJustReleased(0, Keys['E']) and PlayerData.job ~= nil and (PlayerData.job.name == 'police' or PlayerData.job.name == 'sheriff') then
 
 				if CurrentAction == 'menu_cloakroom' then
 					OpenCloakroomMenu()
 				elseif CurrentAction == 'menu_armory' then
 
-						-- OpenArmoryMenu(CurrentActionData.station)
 						OpenArmoryMenu()
 
 				elseif CurrentAction == 'menu_vehicle_spawner' then
@@ -607,3 +548,4 @@ function GetCharacterName(source)
 		return GetPlayerName(source)
 	end
 end
+
