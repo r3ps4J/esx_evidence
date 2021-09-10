@@ -14,7 +14,8 @@ Config.EvidenceLockers = {
 			{x = 1851.28, y = 3683.54, z = 34.27},	--Sandy Shores
 			{x = -442.79, y = 6012.56, z = 31.72},	--Poleto Bay
 		},
-		Society = "society_police"
+		Society = "society_police",
+		Job = "police"
 	}
 }
 

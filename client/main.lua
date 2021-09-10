@@ -343,14 +343,12 @@ Citizen.CreateThread(function()
 
     Wait(0)
 
-    if PlayerData.job ~= nil and (PlayerData.job.name == 'police' or PlayerData.job.name == 'sheriff') then
+    local playerPed = PlayerPedId()
+    local coords    = GetEntityCoords(playerPed)
 
-      local playerPed = PlayerPedId()
-      local coords    = GetEntityCoords(playerPed)
-
-      for k,v in pairs(Config.EvidenceLockers) do
-
-        for i=1, #v.Locker, 1 do
+    for k,v in pairs(Config.EvidenceLockers) do
+      if PlayerData.job ~= nil and (PlayerData.job.name == v.Job) then
+       for i=1, #v.Locker, 1 do
           local dist = GetDistanceBetweenCoords(coords,  v.Locker[i].x,  v.Locker[i].y,  v.Locker[i].z,  true)
           if dist < 5.0 then
             DrawMarker(20, v.Locker[i].x, v.Locker[i].y, v.Locker[i].z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.15, 0.17, 200, 200, 200, 222, false, false, false, true, false, false, false)
@@ -359,9 +357,7 @@ Citizen.CreateThread(function()
             end
           end
         end
-
       end
-
     end
 
   end
@@ -374,17 +370,15 @@ Citizen.CreateThread(function()
 
     Wait(0)
 
-    if PlayerData.job ~= nil and (PlayerData.job.name == 'police' or PlayerData.job.name == 'sheriff') then
+    local playerPed      = PlayerPedId()
+    local coords         = GetEntityCoords(playerPed)
+    local isInMarker     = false
+    local currentStation = nil
+    local currentPart    = nil
+    local currentPartNum = nil
 
-      local playerPed      = PlayerPedId()
-      local coords         = GetEntityCoords(playerPed)
-      local isInMarker     = false
-      local currentStation = nil
-      local currentPart    = nil
-      local currentPartNum = nil
-
-      for k,v in pairs(Config.EvidenceLockers) do
-
+    for k,v in pairs(Config.EvidenceLockers) do
+      if PlayerData.job ~= nil and (PlayerData.job.name == v.Job) then
         for i=1, #v.Locker, 1 do
           if GetDistanceBetweenCoords(coords,  v.Locker[i].x,  v.Locker[i].y,  v.Locker[i].z,  true) < 1.0 then
             isInMarker     = true
@@ -393,36 +387,35 @@ Citizen.CreateThread(function()
             currentPartNum = i
           end
         end
-
       end
 
-      local hasExited = false
+    end
 
-      if isInMarker and not HasAlreadyEnteredMarker or (isInMarker and (LastStation ~= currentStation or LastPart ~= currentPart or LastPartNum ~= currentPartNum) ) then
+    local hasExited = false
 
-        if
-          (LastStation ~= nil and LastPart ~= nil and LastPartNum ~= nil) and
-          (LastStation ~= currentStation or LastPart ~= currentPart or LastPartNum ~= currentPartNum)
-        then
-          TriggerEvent('esx_evidence:hasExitedMarker', LastStation, LastPart, LastPartNum)
-          hasExited = true
-        end
+    if isInMarker and not HasAlreadyEnteredMarker or (isInMarker and (LastStation ~= currentStation or LastPart ~= currentPart or LastPartNum ~= currentPartNum) ) then
 
-        HasAlreadyEnteredMarker = true
-        LastStation             = currentStation
-        LastPart                = currentPart
-        LastPartNum             = currentPartNum
-
-        TriggerEvent('esx_evidence:hasEnteredMarker', currentStation, currentPart, currentPartNum)
-      end
-
-      if not hasExited and not isInMarker and HasAlreadyEnteredMarker then
-
-        HasAlreadyEnteredMarker = false
-
+      if
+        (LastStation ~= nil and LastPart ~= nil and LastPartNum ~= nil) and
+        (LastStation ~= currentStation or LastPart ~= currentPart or LastPartNum ~= currentPartNum)
+      then
         TriggerEvent('esx_evidence:hasExitedMarker', LastStation, LastPart, LastPartNum)
+        hasExited = true
       end
 
+      HasAlreadyEnteredMarker = true
+      LastStation             = currentStation
+      LastPart                = currentPart
+      LastPartNum             = currentPartNum
+
+      TriggerEvent('esx_evidence:hasEnteredMarker', currentStation, currentPart, currentPartNum)
+    end
+
+    if not hasExited and not isInMarker and HasAlreadyEnteredMarker then
+
+      HasAlreadyEnteredMarker = false
+
+      TriggerEvent('esx_evidence:hasExitedMarker', LastStation, LastPart, LastPartNum)
     end
 
   end
@@ -436,14 +429,12 @@ Citizen.CreateThread(function()
 		Citizen.Wait(0)
 
 		if CurrentAction ~= nil then
-			if IsControlJustReleased(0, Keys['E']) and PlayerData.job ~= nil and (PlayerData.job.name == 'police' or PlayerData.job.name == 'sheriff') then
-
-				if CurrentAction == 'menu_armory' then
-					OpenArmoryMenu()
-				end
-				
-				CurrentAction = nil
-			end
+      if PlayerData.job.name == Config.EvidenceLockers[CurrentActionData.station].Job then
+        if IsControlJustReleased(0, Keys['E']) and CurrentAction == "menu_armory" then
+          OpenArmoryMenu()
+          CurrentAction = nil
+        end
+      end
 		end -- CurrentAction end
 	end
 end)
