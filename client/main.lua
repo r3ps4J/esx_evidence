@@ -41,18 +41,22 @@ Citizen.CreateThread(function()
 	PlayerData = ESX.GetPlayerData()
 end)
 
-function OpenArmoryMenu(station)
+function OpenArmoryMenu()
 
 
     local elements = {
-      {label = _U('put_weapon'),     value = 'put_weapon'},
       {label = _U('deposit_object'), value = 'put_stock'}
     }
 
-    if PlayerData.job.grade_name == 'boss' or PlayerData.job.grade_name == 'chief' or PlayerData.job.grade_name == 'chief' then
+    if not Config.TakeBossOnly or (PlayerData.job.grade_name == 'boss' or PlayerData.job.grade_name == 'chief' or PlayerData.job.grade_name == 'chief') then
       table.insert(elements, {label = _U('remove_object'),  value = 'get_stock'})
-      table.insert(elements, {label = _U('get_weapon'),     value = 'get_weapon'})
-	  
+    end
+
+    if Config.EnableWeapons then
+      table.insert(elements, {label = _U('put_weapon'),     value = 'put_weapon'})
+      if not Config.TakeBossOnly or (PlayerData.job.grade_name == 'boss' or PlayerData.job.grade_name == 'chief' or PlayerData.job.grade_name == 'chief') then
+        table.insert(elements, {label = _U('get_weapon'),     value = 'get_weapon'})
+      end
     end
 
     ESX.UI.Menu.CloseAll()
@@ -89,7 +93,6 @@ function OpenArmoryMenu(station)
 
         CurrentAction     = 'menu_armory'
         CurrentActionMsg  = _U('open_armory')
-        CurrentActionData = {station = station}
       end
     )
 end
@@ -120,7 +123,7 @@ function OpenGetWeaponMenu()
 
         ESX.TriggerServerCallback('esx_evidence:removeArmoryWeapon', function()
           OpenGetWeaponMenu()
-        end, data.current.value)
+        end, data.current.value, CurrentActionData.station)
 
       end,
       function(data, menu)
@@ -128,7 +131,7 @@ function OpenGetWeaponMenu()
       end
     )
 
-  end)
+  end, CurrentActionData.station)
 
 end
 
@@ -161,14 +164,13 @@ function OpenPutWeaponMenu()
 
       ESX.TriggerServerCallback('esx_evidence:addArmoryWeapon', function()
         OpenPutWeaponMenu()
-      end, data.current.value, true)
+      end, data.current.value, true, CurrentActionData.station)
 
     end,
     function(data, menu)
       menu.close()
     end
   )
-
 end
 
 function OpenGetStocksMenu()
@@ -207,7 +209,7 @@ function OpenGetStocksMenu()
             else
               menu2.close()
               menu.close()
-              TriggerServerEvent('esx_evidence:getStockItem', itemName, count)
+              TriggerServerEvent('esx_evidence:getStockItem', itemName, count, CurrentActionData.station)
 
               Citizen.Wait(300)
               OpenGetStocksMenu()
@@ -225,7 +227,7 @@ function OpenGetStocksMenu()
       end
     )
 
-  end)
+  end, CurrentActionData.station)
 
 end
 
@@ -283,7 +285,7 @@ function OpenPutStocksMenu()
             local count = tonumber(data2.value)
 
 			if itemName == "black_money" then
-				TriggerServerEvent('esx_evidence:removeBlack', itemName, count)
+				TriggerServerEvent('esx_evidence:removeBlack', itemName, count, CurrentActionData.station)
 			end
 			
             if count == nil then
@@ -291,7 +293,7 @@ function OpenPutStocksMenu()
             else
               menu2.close()
               menu.close()
-              TriggerServerEvent('esx_evidence:putStockItems', itemName, count)
+              TriggerServerEvent('esx_evidence:putStockItems', itemName, count, CurrentActionData.station)
 
               Citizen.Wait(300)
               OpenPutStocksMenu()
@@ -309,7 +311,7 @@ function OpenPutStocksMenu()
       end
     )
 
-  end)
+  end, CurrentActionData.station)
 
 end
 
@@ -322,28 +324,10 @@ end)
 
 AddEventHandler('esx_evidence:hasEnteredMarker', function(station, part, partNum)
 
-  if part == 'Cloakroom' then
-    CurrentAction     = 'menu_cloakroom'
-    CurrentActionMsg  = _U('open_cloackroom')
-    CurrentActionData = {}
-  end
-
   if part == 'Armory' then
     CurrentAction     = 'menu_armory'
     CurrentActionMsg  = _U('open_armory')
     CurrentActionData = {station = station}
-  end
-
-  if part == 'VehicleSpawner' then
-    CurrentAction     = 'menu_vehicle_spawner'
-    CurrentActionMsg  = _U('vehicle_spawner')
-    CurrentActionData = {station = station, partNum = partNum}
-  end
-
-  if part == 'BossActions' then
-    CurrentAction     = 'menu_boss_actions'
-    CurrentActionMsg  = _U('open_bossmenu')
-    CurrentActionData = {}
   end
 
 end)
@@ -367,19 +351,13 @@ Citizen.CreateThread(function()
       for k,v in pairs(Config.EvidenceLockers) do
 
         for i=1, #v.Locker, 1 do
-          if GetDistanceBetweenCoords(coords,  v.Locker[i].x,  v.Locker[i].y,  v.Locker[i].z,  true) < Config.DrawDistance then
-            DrawMarker(Config.MarkerType, v.Locker[i].x, v.Locker[i].y, v.Locker[i].z, 0.0, 0.0, 0.0, 0, 0.0, 0.0, Config.MarkerSize.x, Config.MarkerSize.y, Config.MarkerSize.z, Config.MarkerColor.r, Config.MarkerColor.g, Config.MarkerColor.b, 100, false, true, 2, false, false, false, false)
-          end
-        end
-
-        if PlayerData.job ~= nil and (PlayerData.job.name == 'police' or PlayerData.job.name == 'sheriff') and PlayerData.job.grade_name == 'boss' or PlayerData.job.grade_name == 'chief' then
-
-          for i=1, #v.BossActions, 1 do
-            if not v.BossActions[i].disabled and GetDistanceBetweenCoords(coords,  v.BossActions[i].x,  v.BossActions[i].y,  v.BossActions[i].z,  true) < Config.DrawDistance then
-              DrawMarker(Config.MarkerType, v.BossActions[i].x, v.BossActions[i].y, v.BossActions[i].z, 0.0, 0.0, 0.0, 0, 0.0, 0.0, Config.MarkerSize.x, Config.MarkerSize.y, Config.MarkerSize.z, Config.MarkerColor.r, Config.MarkerColor.g, Config.MarkerColor.b, 100, false, true, 2, false, false, false, false)
+          local dist = GetDistanceBetweenCoords(coords,  v.Locker[i].x,  v.Locker[i].y,  v.Locker[i].z,  true)
+          if dist < 5.0 then
+            DrawMarker(20, v.Locker[i].x, v.Locker[i].y, v.Locker[i].z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.15, 0.17, 200, 200, 200, 222, false, false, false, true, false, false, false)
+            if dist < 1.0 then
+              DrawText3D(v.Locker[i].x, v.Locker[i].y, v.Locker[i].z + 0.1, "~g~E~w~ - ".. _U("open_armory"))
             end
           end
-
         end
 
       end
@@ -408,26 +386,12 @@ Citizen.CreateThread(function()
       for k,v in pairs(Config.EvidenceLockers) do
 
         for i=1, #v.Locker, 1 do
-          if GetDistanceBetweenCoords(coords,  v.Locker[i].x,  v.Locker[i].y,  v.Locker[i].z,  true) < Config.MarkerSize.x then
+          if GetDistanceBetweenCoords(coords,  v.Locker[i].x,  v.Locker[i].y,  v.Locker[i].z,  true) < 1.0 then
             isInMarker     = true
             currentStation = k
             currentPart    = 'Armory'
             currentPartNum = i
           end
-        end
-
-
-        if PlayerData.job ~= nil and (PlayerData.job.name == 'police' or PlayerData.job.name == 'sheriff') and PlayerData.job.grade_name == 'boss' or PlayerData.job.grade_name == 'chief' then
-
-          for i=1, #v.BossActions, 1 do
-            if GetDistanceBetweenCoords(coords,  v.BossActions[i].x,  v.BossActions[i].y,  v.BossActions[i].z,  true) < Config.MarkerSize.x then
-              isInMarker     = true
-              currentStation = k
-              currentPart    = 'BossActions'
-              currentPartNum = i
-            end
-          end
-
         end
 
       end
@@ -472,36 +436,10 @@ Citizen.CreateThread(function()
 		Citizen.Wait(0)
 
 		if CurrentAction ~= nil then
-			SetTextComponentFormat('STRING')
-			AddTextComponentString(CurrentActionMsg)
-			DisplayHelpTextFromStringLabel(0, 0, 1, -1)
-
 			if IsControlJustReleased(0, Keys['E']) and PlayerData.job ~= nil and (PlayerData.job.name == 'police' or PlayerData.job.name == 'sheriff') then
 
-				if CurrentAction == 'menu_cloakroom' then
-					OpenCloakroomMenu()
-				elseif CurrentAction == 'menu_armory' then
-
-						OpenArmoryMenu()
-
-				elseif CurrentAction == 'menu_vehicle_spawner' then
-					OpenVehicleSpawnerMenu(CurrentActionData.station, CurrentActionData.partNum)
-				elseif CurrentAction == 'delete_vehicle' then
-					if Config.EnableSocietyOwnedVehicles then
-						local vehicleProps = ESX.Game.GetVehicleProperties(CurrentActionData.vehicle)
-						TriggerServerEvent('esx_society:putVehicleInGarage', 'police', vehicleProps)
-					end
-					ESX.Game.DeleteVehicle(CurrentActionData.vehicle)
-				elseif CurrentAction == 'menu_boss_actions' then
-					ESX.UI.Menu.CloseAll()
-					TriggerEvent('esx_society:openBossMenu', 'police', function(data, menu)
-						menu.close()
-						CurrentAction     = 'menu_boss_actions'
-						CurrentActionMsg  = _U('open_bossmenu')
-						CurrentActionData = {}
-					end, { wash = false }) -- disable washing money
-				elseif CurrentAction == 'remove_entity' then
-					DeleteEntity(CurrentActionData.entity)
+				if CurrentAction == 'menu_armory' then
+					OpenArmoryMenu()
 				end
 				
 				CurrentAction = nil
@@ -530,22 +468,17 @@ AddEventHandler('onResourceStop', function(resource)
 	end
 end)
 
-
-function GetCharacterName(source)
-	-- fetch identity in sync
-	local result = MySQL.Sync.fetchAll('SELECT * FROM users WHERE identifier = @identifier',
-	{
-		['@identifier'] = GetPlayerIdentifiers(source)[1]
-	})
-
-	if result[1] ~= nil and result[1].firstname ~= nil and result[1].lastname ~= nil then
-		if Config.OnlyFirstname then
-			return result[1].firstname
-		else
-			return result[1].firstname .. ' ' .. result[1].lastname
-		end
-	else
-		return GetPlayerName(source)
-	end
+function DrawText3D(x, y, z, text)
+	SetTextScale(0.35, 0.35)
+	SetTextFont(4)
+	SetTextProportional(1)
+	SetTextColour(255, 255, 255, 215)
+	SetTextEntry("STRING")
+	SetTextCentre(true)
+	AddTextComponentString(text)
+	SetDrawOrigin(x,y,z, 0)
+	DrawText(0.0, 0.0)
+	local factor = (string.len(text)) / 370
+	DrawRect(0.0, 0.0+0.0125, 0.017+ factor, 0.03, 0, 0, 0, 75)
+	ClearDrawOrigin()
 end
-

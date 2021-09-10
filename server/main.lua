@@ -3,12 +3,12 @@ ESX = nil
 TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
 
 RegisterServerEvent('esx_evidence:getStockItem')
-AddEventHandler('esx_evidence:getStockItem', function(itemName, count)
+AddEventHandler('esx_evidence:getStockItem', function(itemName, count, k)
     local _source    = source
     local xPlayer    = ESX.GetPlayerFromId(_source)
     local sourceItem = xPlayer.getInventoryItem(itemName)
 
-    TriggerEvent('esx_addoninventory:getSharedInventory', 'society_evidence', function(inventory)
+    TriggerEvent('esx_addoninventory:getSharedInventory', Config.EvidenceLockers[k].Society, function(inventory)
 
         local inventoryItem = inventory.getItem(itemName)
 
@@ -31,11 +31,11 @@ AddEventHandler('esx_evidence:getStockItem', function(itemName, count)
 end)
 
 RegisterServerEvent('esx_evidence:putStockItems')
-AddEventHandler('esx_evidence:putStockItems', function(itemName, count)
+AddEventHandler('esx_evidence:putStockItems', function(itemName, count, k)
     local xPlayer    = ESX.GetPlayerFromId(source)
     local sourceItem = xPlayer.getInventoryItem(itemName)
 
-    TriggerEvent('esx_addoninventory:getSharedInventory', 'society_evidence', function(inventory)
+    TriggerEvent('esx_addoninventory:getSharedInventory', Config.EvidenceLockers[k].Society, function(inventory)
 
         local inventoryItem = inventory.getItem(itemName)
 
@@ -53,10 +53,10 @@ AddEventHandler('esx_evidence:putStockItems', function(itemName, count)
 end)
 
 RegisterServerEvent('esx_evidence:removeBlack')
-AddEventHandler('esx_evidence:removeBlack', function(itemName, count)
+AddEventHandler('esx_evidence:removeBlack', function(itemName, count, k)
     local xPlayer = ESX.GetPlayerFromId(source)
     -- xPlayer.removeAccountMoney(itemName, count)
-    TriggerEvent('esx_addoninventory:getSharedInventory', 'society_evidence', function(inventory)
+    TriggerEvent('esx_addoninventory:getSharedInventory', Config.EvidenceLockers[k].Society, function(inventory)
 
         local inventoryItem = inventory.getItem(itemName)
 
@@ -73,9 +73,9 @@ AddEventHandler('esx_evidence:removeBlack', function(itemName, count)
     
 end)
 
-ESX.RegisterServerCallback('esx_evidence:getArmoryWeapons', function(source, cb)
+ESX.RegisterServerCallback('esx_evidence:getArmoryWeapons', function(source, cb, k)
 
-    TriggerEvent('esx_datastore:getSharedDataStore', 'society_evidence', function(store)
+    TriggerEvent('esx_datastore:getSharedDataStore', Config.EvidenceLockers[k].Society, function(store)
 
         local weapons = store.get('weapons')
 
@@ -89,7 +89,7 @@ ESX.RegisterServerCallback('esx_evidence:getArmoryWeapons', function(source, cb)
 
 end)
 
-ESX.RegisterServerCallback('esx_evidence:addArmoryWeapon', function(source, cb, weaponName, removeWeapon)
+ESX.RegisterServerCallback('esx_evidence:addArmoryWeapon', function(source, cb, weaponName, removeWeapon, k)
 
     local xPlayer = ESX.GetPlayerFromId(source)
 
@@ -97,7 +97,7 @@ ESX.RegisterServerCallback('esx_evidence:addArmoryWeapon', function(source, cb, 
         xPlayer.removeWeapon(weaponName)
     end
 
-    TriggerEvent('esx_datastore:getSharedDataStore', 'society_evidence', function(store)
+    TriggerEvent('esx_datastore:getSharedDataStore', Config.EvidenceLockers[k].Society, function(store)
 
         local weapons = store.get('weapons')
 
@@ -129,13 +129,13 @@ ESX.RegisterServerCallback('esx_evidence:addArmoryWeapon', function(source, cb, 
 
 end)
 
-ESX.RegisterServerCallback('esx_evidence:removeArmoryWeapon', function(source, cb, weaponName)
+ESX.RegisterServerCallback('esx_evidence:removeArmoryWeapon', function(source, cb, weaponName, k)
 
     local xPlayer = ESX.GetPlayerFromId(source)
 
     xPlayer.addWeapon(weaponName, 1000)
 
-    TriggerEvent('esx_datastore:getSharedDataStore', 'society_evidence', function(store)
+    TriggerEvent('esx_datastore:getSharedDataStore', Config.EvidenceLockers[k].Society, function(store)
 
         local weapons = store.get('weapons')
 
@@ -167,9 +167,9 @@ ESX.RegisterServerCallback('esx_evidence:removeArmoryWeapon', function(source, c
 
 end)
 
-ESX.RegisterServerCallback('esx_evidence:getStockItems', function(source, cb)
+ESX.RegisterServerCallback('esx_evidence:getStockItems', function(source, cb, k)
 
-    TriggerEvent('esx_addoninventory:getSharedInventory', 'society_evidence', function(inventory)
+    TriggerEvent('esx_addoninventory:getSharedInventory', Config.EvidenceLockers[k].Society, function(inventory)
         cb(inventory.items)
     end)
 
