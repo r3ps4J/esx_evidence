@@ -1,7 +1,5 @@
 Config                            = {}
 
-Config.DrawDistance               = 100.0
-
 Config.TakeBossOnly = false	-- only boss is allowed to take items out
 Config.EnableWeapons = true
 
