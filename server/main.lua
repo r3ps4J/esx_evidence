@@ -6,7 +6,6 @@ RegisterServerEvent('esx_evidence:getStockItem')
 AddEventHandler('esx_evidence:getStockItem', function(itemName, count, k)
     local _source    = source
     local xPlayer    = ESX.GetPlayerFromId(_source)
-    local sourceItem = xPlayer.getInventoryItem(itemName)
 
     TriggerEvent('esx_addoninventory:getSharedInventory', Config.EvidenceLockers[k].Society, function(inventory)
 
@@ -16,12 +15,12 @@ AddEventHandler('esx_evidence:getStockItem', function(itemName, count, k)
         if count > 0 and inventoryItem.count >= count then
 
             -- can the player carry the said amount of x item?
-            if sourceItem.limit ~= -1 and (sourceItem.count + count) > sourceItem.limit then
-                TriggerClientEvent('esx:showNotification', _source, _U('quantity_invalid'))
-            else
+            if CanCarryItem(_source, itemName, count) then
                 inventory.removeItem(itemName, count)
                 xPlayer.addInventoryItem(itemName, count)
                 TriggerClientEvent('esx:showNotification', _source, _U('have_withdrawn', count, inventoryItem.label))
+            else
+                TriggerClientEvent('esx:showNotification', _source, _U('quantity_invalid'))
             end
         else
             TriggerClientEvent('esx:showNotification', _source, _U('quantity_invalid'))
@@ -214,3 +213,13 @@ AddEventHandler('onResourceStop', function(resource)
 
     end
 end)
+
+function CanCarryItem(target, item, count)
+    local xPlayer = ESX.GetPlayerFromId(target)
+    if Config.OldESX then
+        local sourceItem = xPlayer.getInventoryItem(item)
+        return sourceItem.limit ~= -1 and (sourceItem.count + count) > sourceItem.limit
+    else
+        return xPlayer.canCarryItem(item, count)
+    end
+end

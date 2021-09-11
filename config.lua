@@ -1,6 +1,8 @@
 Config                            = {}
 
-Config.TakeBossOnly = false	-- only boss is allowed to take items out
+Config.OldESX = false -- Set to true to use item limits instead of weights
+
+Config.TakeBossOnly = false	-- Only boss is allowed to take items out
 Config.EnableWeapons = true
 
 Config.Locale = 'en'
