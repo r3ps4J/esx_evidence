@@ -5,6 +5,8 @@ Config.OldESX = false -- Set to true to use item limits instead of weights
 Config.TakeBossOnly = false	-- Only boss is allowed to take items out
 Config.EnableWeapons = true
 
+Config.WeaponBullets = 1000	-- The amount of bullets that a weapon has when you take it
+
 Config.Locale = 'en'
 
 Config.EvidenceLockers = {

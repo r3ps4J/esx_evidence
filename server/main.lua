@@ -132,7 +132,7 @@ ESX.RegisterServerCallback('esx_evidence:removeArmoryWeapon', function(source, c
 
     local xPlayer = ESX.GetPlayerFromId(source)
 
-    xPlayer.addWeapon(weaponName, 1000)
+    xPlayer.addWeapon(weaponName, Config.WeaponBullets)
 
     TriggerEvent('esx_datastore:getSharedDataStore', Config.EvidenceLockers[k].Society, function(store)
 
