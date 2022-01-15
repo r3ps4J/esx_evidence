@@ -182,7 +182,11 @@ function OpenGetStocksMenu()
 
     for i=1, #items, 1 do
       if items[i].count ~= 0 then
-        table.insert(elements, {label = 'x' .. items[i].count .. ' ' .. items[i].label, value = items[i].name})
+        if items[i].name == "black_money" then
+          table.insert(elements, {label = _U('black_money') .. ' [ $'.. items[i].count ..' ]', value = items[i].name})
+        else
+          table.insert(elements, {label = 'x' .. items[i].count .. ' ' .. items[i].label, value = items[i].name})
+        end
       end
     end
 
@@ -285,10 +289,6 @@ function OpenPutStocksMenu()
           function(data2, menu2)
 
             local count = tonumber(data2.value)
-
-			if itemName == "black_money" then
-				TriggerServerEvent('esx_evidence:removeBlack', itemName, count, CurrentActionData.station)
-			end
 			
             if count == nil then
               ESX.ShowNotification(_U('quantity_invalid'))

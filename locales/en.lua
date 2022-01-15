@@ -4,6 +4,7 @@ Locales['en'] = {
   ['deposit_object'] = 'deposit object',
   ['get_weapon'] = 'withdraw weapon from evidence locker',
   ['put_weapon'] = 'store weapon in evidence locker',
+  ['black_money'] = 'Dirty Money',
   ['armory'] = 'evidence locker',
   ['open_armory'] = 'Access the ~y~Evidence Locker~s~.',
   -- Boss Menu

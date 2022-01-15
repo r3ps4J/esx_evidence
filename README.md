@@ -3,14 +3,15 @@ Evidence Locker inside Mission Row Armoury
 
 ## About this fork
 I changed some *minor* things in this project.
-Mainly so this plugin works great as an additon to my paid plugin **r3-evidence_storage**, which you can buy [here](https://discord.gg/bEWmBbg).
+Mainly so this plugin works great as an addition to my paid plugin **r3-evidence_storage**, which you can buy [here](https://discord.gg/bEWmBbg).
 
 Here I will state the changes I made in this fork.
 - I have no clue, I edited some stuff like the missing config options.
-- Copy pasted the locales from esx_policejob which seemed to work.
+- Copy-pasted the locales from esx_policejob which seemed to work.
 - Fixed not being able to reopen the menu when still in the circle.
 - Edited marker to the same marker as r3-evidence_storage to make them look cool and stuff.
 - Removed all useless locales and changed some.
+- Rewrote the black money part
 
 ### Dependencies
 You need esx, esx_addoninventory and esx_datastore.

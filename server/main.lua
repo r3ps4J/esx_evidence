@@ -13,14 +13,19 @@ AddEventHandler('esx_evidence:getStockItem', function(itemName, count, k)
 
         -- is there enough in the society?
         if count > 0 and inventoryItem.count >= count then
-
-            -- can the player carry the said amount of x item?
-            if CanCarryItem(_source, itemName, count) then
+            if itemName == "black_money" then
                 inventory.removeItem(itemName, count)
-                xPlayer.addInventoryItem(itemName, count)
-                TriggerClientEvent('esx:showNotification', _source, _U('have_withdrawn', count, inventoryItem.label))
+                xPlayer.addAccountMoney(itemName, count)
+                TriggerClientEvent('esx:showNotification', _source, _U('have_withdrawn', count, _U('black_money')))
             else
-                TriggerClientEvent('esx:showNotification', _source, _U('quantity_invalid'))
+                -- can the player carry the said amount of x item?
+                if CanCarryItem(_source, itemName, count) then
+                    inventory.removeItem(itemName, count)
+                    xPlayer.addInventoryItem(itemName, count)
+                    TriggerClientEvent('esx:showNotification', _source, _U('have_withdrawn', count, inventoryItem.label))
+                else
+                    TriggerClientEvent('esx:showNotification', _source, _U('quantity_invalid'))
+                end
             end
         else
             TriggerClientEvent('esx:showNotification', _source, _U('quantity_invalid'))
@@ -32,44 +37,40 @@ end)
 RegisterServerEvent('esx_evidence:putStockItems')
 AddEventHandler('esx_evidence:putStockItems', function(itemName, count, k)
     local xPlayer    = ESX.GetPlayerFromId(source)
-    local sourceItem = xPlayer.getInventoryItem(itemName)
+    if itemName == "black_money" then
+        local sourceItem = xPlayer.getAccount(itemName)
+        TriggerEvent('esx_addoninventory:getSharedInventory', Config.EvidenceLockers[k].Society, function(inventory)
 
-    TriggerEvent('esx_addoninventory:getSharedInventory', Config.EvidenceLockers[k].Society, function(inventory)
+            local inventoryItem = inventory.getItem(itemName)
 
-        local inventoryItem = inventory.getItem(itemName)
+            -- does the player have enough of the item?
+            if sourceItem.money >= count and count > 0 then
+                xPlayer.removeAccountMoney(itemName, count)
+                inventory.addItem(itemName, count)
+                TriggerClientEvent('esx:showNotification', xPlayer.source, _U('have_deposited', count, _U('black_money')))
+            else
+                TriggerClientEvent('esx:showNotification', xPlayer.source, _U('quantity_invalid'))
+            end
 
-        -- does the player have enough of the item?
-        if sourceItem.count >= count and count > 0 then
-            xPlayer.removeInventoryItem(itemName, count)
-            inventory.addItem(itemName, count)
-            TriggerClientEvent('esx:showNotification', xPlayer.source, _U('have_deposited', count, inventoryItem.label))
-        else
-            TriggerClientEvent('esx:showNotification', xPlayer.source, _U('quantity_invalid'))
-        end
+        end)
+    else
+        local sourceItem = xPlayer.getInventoryItem(itemName)
 
-    end)
+        TriggerEvent('esx_addoninventory:getSharedInventory', Config.EvidenceLockers[k].Society, function(inventory)
 
-end)
+            local inventoryItem = inventory.getItem(itemName)
 
-RegisterServerEvent('esx_evidence:removeBlack')
-AddEventHandler('esx_evidence:removeBlack', function(itemName, count, k)
-    local xPlayer = ESX.GetPlayerFromId(source)
-    -- xPlayer.removeAccountMoney(itemName, count)
-    TriggerEvent('esx_addoninventory:getSharedInventory', Config.EvidenceLockers[k].Society, function(inventory)
+            -- does the player have enough of the item?
+            if sourceItem.count >= count and count > 0 then
+                xPlayer.removeInventoryItem(itemName, count)
+                inventory.addItem(itemName, count)
+                TriggerClientEvent('esx:showNotification', xPlayer.source, _U('have_deposited', count, inventoryItem.label))
+            else
+                TriggerClientEvent('esx:showNotification', xPlayer.source, _U('quantity_invalid'))
+            end
 
-        local inventoryItem = inventory.getItem(itemName)
-
-        -- does the player have enough of the item?
-        if sourceItem.count >= count and count > 0 then
-            xPlayer.removeAccountMoney(itemName, count)
-            inventory.addItem(itemName, count)
-            TriggerClientEvent('esx:showNotification', xPlayer.source, _U('have_deposited', count, inventoryItem.label))
-        else
-            TriggerClientEvent('esx:showNotification', xPlayer.source, _U('quantity_invalid'))
-        end
-
-    end)
-    
+        end)
+    end
 end)
 
 ESX.RegisterServerCallback('esx_evidence:getArmoryWeapons', function(source, cb, k)
